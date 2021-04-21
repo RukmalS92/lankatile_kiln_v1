@@ -1,0 +1,33 @@
+{
+    "database" : {
+        "host": "localhost",
+        "user": "root",
+        "password": "123456",
+        "database" : "kiln",
+        "multipleStatements" : true
+    },
+    "com_ports" : {
+        "temeprature" : "COM6",
+        "vfd" : "COM5"
+    },
+    "timevalue_calibration" : 23.3,
+    "tempcontrollerid" : [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+    ],
+    "vfdid" : [
+        1,
+        2,
+        3,
+        4
+    ],
+    "controllertest" : "both"
+}
