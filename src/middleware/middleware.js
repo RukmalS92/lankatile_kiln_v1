@@ -33,7 +33,7 @@ const saveInvSV = async (req,res,next) => {
         next();
     } catch (error) {
         errorhandler.error(error)
-        res.status(501).send({status : "fail"})
+        res.status(501).send({status : error.message})
     }
 }
 

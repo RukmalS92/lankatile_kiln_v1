@@ -17,8 +17,8 @@ const com_ports = config.com_ports
 //register numbers
 let temp_pv_address = 2;
 let temp_sv_address = 4;
-let vfd_pv_address = 40201;
-let vfd_sv_address = 40014;
+let vfd_pv_address = 9002;
+let vfd_sv_address = 9002;
 
 //comport flag
 let temp_comport_available_flag = false;
@@ -57,7 +57,7 @@ SerialPort.list()
                     parity: 'none'
                  });
                 try {
-                    masterVFD = new ModbusMaster(serialPortVFD, {responseTimeout : 500});
+                    masterVFD = new ModbusMaster(serialPortVFD, {responseTimeout : 50});
                     errorhandler.info("Modbus @Inverter Connection Complete ...")
                 } catch (error) {
                     errorhandler.error(new Error("Error in Serial Port @Inverter Connection or modbus instance : ErrorType : " + error.name + " Original Error Message : " + error.message))
@@ -125,8 +125,10 @@ const getINVData = async() => {
                 if(inv_comport_available_flag === false){
                     throw new Error("ComPortError")
                 }
-                data = await masterVFD.readHoldingRegisters(id, 40200 ,1);
-                console.log(data)
+                data = await masterVFD.readHoldingRegisters(id, vfd_pv_address ,1);
+                let speedValue = parseFloat(data[0] / 10);
+                // console.log(speedValue, data)
+                finalData.push([id, speedValue]);
             } catch (error) {
                 if(error.name === 'ModbusResponseTimeout'){
                     finalData.push([id,-1.0]);
@@ -147,19 +149,16 @@ const getINVData = async() => {
 
 //write vfd data : type float
 const updateINVData = async (id, value) =>{
-    
-    let uint8 = new Uint8Array(4)
     try {
-        ieee754.write(uint8, value, 0, true, 23, 4);
-        let uint16 = new Uint16Array(2)
-        console.log(uint16)
+        let writeValue = parseInt(value * 10)
+        console.log("write value : " + writeValue)
         try {
-            // await masterVFD.writeMultipleRegisters(id, vfd_sv_address, uint16)
+            await masterVFD.writeMultipleRegisters(id, vfd_sv_address, [writeValue])
         } catch (error) {
             throw new Error("Error in writing VFD data : ErrorType " + error.name + "Original Message : " + error.message)
         }
     } catch (error) {
-        throw new Error("Error in converting ieee to buffer : ErrorType " + error.name + "Original Message : " + error.message)
+        throw new Error("Error buffer : ErrorType " + error.name + "Original Message : " + error.message)
     }
 }
 
@@ -170,10 +169,3 @@ module.exports = {
     updateINVData
 }
 
-// let uint16 = new Uint16Array(2)
-    // let uint8 = new Uint8Array(uint16.buffer,uint16.byteOffset,uint16.byteLength)
-    // uint16[0] = 37357
-    // uint16[1] = 48190
-    // console.log(uint8, uint16)
-    // let x = ieee754.read(uint8,0,true,23,4)
-    // console.log(x, uint16, uint8)

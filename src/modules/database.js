@@ -47,7 +47,20 @@ const updateVFDSpeedData = (invdata, timevalue) => {
 //bulk - initial retreival of temperature data
 const getTempDataBulk = (start, end) => {
     return new Promise((resolve, reject) => {
-        const query = "select * from temp_rawdata where logtime between '"+ start +"' and '"+ end +"'";
+        const query = "select date(logtime) as date, " +
+		"time(logtime) as time, " +
+        "temp_t1 as temp_t1, " +
+        "temp_t2 as temp_t2, " +
+        "temp_t3 as temp_t3, " +
+        "temp_t4 as temp_t4, " +
+        "temp_t5 as temp_t5, " +
+        "temp_t6 as temp_t6, " +
+        "temp_t7 as temp_t7, " +
+        "temp_t8 as temp_t8, " +
+        "temp_t9 as temp_t9, " +
+        "temp_t10 as temp_t10 " +
+        "from temp_rawdata " +
+        "where logtime between '"+ start + "' and '"+ end + "'";
         con.query(query, (error, results, fields) => {
             if(error){
                 return reject(new Error("Temperature History data BULK retrieve Failed : ==> " + error.message + " @ " + __filename + " @ ErrorType : " + error.name))
@@ -57,11 +70,36 @@ const getTempDataBulk = (start, end) => {
     })
 }
 
-//single retreival of temperature data
-const getTempDataSingle = (start, end) => {
+//get current max id for the temperature
+const getCurrentMaxIDforTemp = () => {
     return new Promise((resolve, reject) => {
-        const query = "set @maxid = (select max(id) from temp_rawdata where id in (select id from temp_rawdata where logtime between '" + start + "' and '" + end + "'));" + 
-                        "select * from temp_rawdata where id =  @maxid;";
+        const query = "select max(id) as maxid from temp_rawdata";
+        con.query(query, (error, results, fields) => {
+            if(error){
+                return reject(new Error("Max Id retrieval error @ Temperature : ==> " + error.message + " @ " + __filename + " @ ErrorType : " + error.name))
+            }
+            resolve(results)
+        })
+    })
+}
+
+//single retreival of temperature data
+const getTempDataSingle = (start, end, currentId) => {
+    return new Promise((resolve, reject) => {
+        const query = "select date(logtime) as date, " +
+                            "time(logtime) as time, " +
+                            "temp_t1 as temp_t1, " +
+                            "temp_t2 as temp_t2, " +
+                            "temp_t3 as temp_t3, " +
+                            "temp_t4 as temp_t4, " +
+                            "temp_t5 as temp_t5, " +
+                            "temp_t6 as temp_t6, " +
+                            "temp_t7 as temp_t7, " +
+                            "temp_t8 as temp_t8, " +
+                            "temp_t9 as temp_t9, " +
+                            "temp_t10 as temp_t10 " +
+                            "from temp_rawdata " +
+                            "where (logtime between '" + start + "' and '" + end + "') and (id between " + currentId + " and (select max(id) from temp_rawdata)) ;";
         con.query(query, (error, results, fields) => {
             if(error){
                 return reject(new Error("Temperature History data SINGLE retrieve Failed : ==> " + error.message + " @ " + __filename + " @ ErrorType : " + error.name))
@@ -74,7 +112,14 @@ const getTempDataSingle = (start, end) => {
 //get inv data bulk
 const getInvDataBulk = (start, end) => {
     return new Promise((resolve, reject) => {
-        const query = "select * from inv_rawdata where logtime between '"+ start +"' and '"+ end +"'";
+        const query = "select date(logtime) as date, " +
+		"time(logtime) as time, " +
+        "inv1 as inv1, " +
+        "inv2 as inv2, " +
+        "inv3 as inv3, " +
+        "timevalue as timevalue " +
+        "from inv_rawdata " +
+        "where logtime between '"+ start + "' and '" + end + "';";
         con.query(query, (error, results, fields) => {
             if(error) {
                 return reject(new Error("Invertert Speed History data BULK retrieve Failed : ==> " + error.message + " @ " + __filename + " @ ErrorType : " + error.name))
@@ -84,14 +129,33 @@ const getInvDataBulk = (start, end) => {
     })
 }
 
-//get inv data single
-const getInvDataSingle = (start, end) => {
+//get maxid for inverter speed
+const getCurrentMaxIDforInv = () => {
     return new Promise((resolve, reject) => {
-        const query = "set @maxid = (select max(id) from inv_rawdata where id in (select id from inv_rawdata where logtime between '" + start + "' and '" + end + "'));" + 
-                        "select * from inv_rawdata where id =  @maxid;";
+        const query = "select max(id) as maxid from inv_rawdata";
+        con.query(query, (error,results,fields) => {
+            if(error){
+                return reject(new Error("Max Id retrieval error @ Inverter : ==> " + error.message + " @ " + __filename + " @ ErrorType : " + error.name))
+            }
+            resolve(results)
+        })
+    })
+}
+
+//get inv data single
+const getInvDataSingle = (start, end, currentId) => {
+    return new Promise((resolve, reject) => {
+        const query = "select date(logtime) as date, " +
+                        "time(logtime) as time, " +
+                        "inv1 as inv1, " +
+                        "inv2 as inv2, " +
+                        "inv3 as inv3, " +
+                        "timevalue as timevalue " +
+                        "from inv_rawdata " +
+                        "where (logtime between '" + start + "' and '" + end + "') and (id between " + currentId + " and (select max(id) from inv_rawdata));";
         con.query(query, (error, results, fields) => {
             if(error) {
-                return reject(new Error("Invertert Speed History data BULK retrieve Failed : ==> " + error.message + " @ " + __filename + " @ ErrorType : " + error.name))
+                return reject(new Error("Inverter Speed History data Single retrieve Failed : ==> " + error.message + " @ " + __filename + " @ ErrorType : " + error.name))
             }
             resolve(results)
         })
@@ -187,8 +251,10 @@ module.exports = {
     updateVFDSpeedData,
     getTempDataBulk,
     getTempDataSingle,
+    getCurrentMaxIDforTemp,
     getInvDataBulk,
     getInvDataSingle,
+    getCurrentMaxIDforInv,
     setSVTempData,
     getSVTempData,
     setSVInvData,

@@ -8,6 +8,9 @@ const moment = require('moment')
 const data = require('../modules/shared')
 const middleware = require('../middleware/middleware')
 
+let currentTempMaxId = 0;
+let currentInvMaxId = 0;
+
 //handle json body
 router.use(bodyparser.json());
 
@@ -86,6 +89,7 @@ router.post('/invwr', async(req,res) => {
         try {
             await modbusDev.updateINVData(key, value)
         } catch (error) {
+            console.log(error.message)
             updateSuccessFlag = false
         }
     }
@@ -113,65 +117,21 @@ router.post('/timevaluewr', async (req,res) => {
 router.get('/temphistory', async (req,res) => {
     const history_init_flag = parseInt(req.query.init);
     const device = req.query.device;    
-
-    const today = moment().format();
-    const tomorrow = moment().add(1, 'days').format();
-    const todayDate = today.split('T')[0] + " 00:00:00" ;
-    const tomorrowDate = tomorrow.split('T')[0] + " 00:00:00";
+    const currentDate = moment().format();
+    const recordStartDate = moment().subtract(1, 'month').format();
+    const recordStopDate = moment().add(1, 'day').format();
 
     if(history_init_flag === 0){
-        let finalData = []
-        try {
-            let historyData = (device === "trcx") ? await database.getTempDataBulk(todayDate, tomorrowDate) : {}
-            // console.log(historyData)
-            historyData.forEach(data => {
-                let logtime = moment(data.logtime).format();
-                let logtimeDisplay = logtime.split('T')[0] + " " + (logtime.split('T')[1]).split('+')[0];
-                let Object = {
-                    logtime : logtimeDisplay,
-                    t1 : data.temp_t1,
-                    t2 : data.temp_t2,
-                    t3 : data.temp_t3,
-                    t4 : data.temp_t4,
-                    t5 : data.temp_t5,
-                    t6 : data.temp_t6,
-                    t7 : data.temp_t7,
-                    t8 : data.temp_t8,
-                    t9 : data.temp_t9,
-                    t10 : data.temp_t10
-                }
-                finalData.push(Object);
-            });
-            res.send(finalData);
-        } catch (error) {
-            errorhandler.error(error);
-            res.status(501).send({Error : error});
-        }
+        currentTempMaxId = 0;
     }
-    else if(history_init_flag === 1){
-        try {
-            let historyDataSingle = (device === "trcx") ? await database.getTempDataSingle(todayDate, tomorrowDate) : {}
-            let data = historyDataSingle[1][0]
-            let logtime = moment(data.logtime).format();
-            let logtimeDisplay = logtime.split('T')[0] + " " + (logtime.split('T')[1]).split('+')[0];
-            let Object = {
-                logtime : logtimeDisplay,
-                t1 : data.temp_t1,
-                t2 : data.temp_t2,
-                t3 : data.temp_t3,
-                t4 : data.temp_t4,
-                t5 : data.temp_t5,
-                t6 : data.temp_t6,
-                t7 : data.temp_t7,
-                t8 : data.temp_t8,
-                t9 : data.temp_t9,
-                t10 : data.temp_t10
-            }
-            res.send(Object);
-        } catch (error) {
-            errorhandler.error(error);
-            res.status(501).send({Error : error});
-        }
+
+    try {
+        let historyDataSingle = (device === "trcx") ? await database.getTempDataSingle(recordStartDate, recordStopDate, currentTempMaxId) : {}
+        currentTempMaxId = (await database.getCurrentMaxIDforTemp())[0].maxid;
+        res.send(historyDataSingle);
+    } catch (error) {
+        errorhandler.error(error);
+        res.status(501).send({Error : error});
     }
 });
 
@@ -179,52 +139,21 @@ router.get('/temphistory', async (req,res) => {
 router.get('/invhistory', async (req,res) => {
     const history_init_flag = parseInt(req.query.init);
     const device = req.query.device;    
-
-    const today = moment().format();
-    const tomorrow = moment().add(1, 'days').format();
-    const todayDate = today.split('T')[0] + " 00:00:00" ;
-    const tomorrowDate = tomorrow.split('T')[0] + " 00:00:00";
+    const currentDate = moment().format();
+    const recordStartDate = moment().subtract(1, 'month').format();
+    const recordStopDate = moment().add(1, 'day').format();
 
     if(history_init_flag === 0){
-        let finalData = []
-        try {
-            let historyDataBulk = (device === "inv") ? await database.getInvDataBulk(todayDate, tomorrowDate) : {};
-            historyDataBulk.forEach(data =>{
-                let logtime = moment(data.logtime).format();
-                let logtimeDisplay = logtime.split('T')[0] + " " + (logtime.split('T')[1]).split('+')[0];
-                let Object = {
-                    logtime : logtimeDisplay,
-                    inv1 : data.inv1,
-                    inv2 : data.inv2,
-                    inv3 : data.inv3,
-                    timevalue : data.timevalue
-                }
-                finalData.push(Object)
-            });
-            res.send(finalData);
-        } catch (error) {
-            errorhandler.error(error);
-            res.status(501).send({Error : error});
-        }
+        currentInvMaxId = 0;
     }
-    else if(history_init_flag === 1){
-        try {
-            let historyDataSingle = (device === "inv") ? await database.getInvDataSingle(todayDate, tomorrowDate) : {};
-            let data = historyDataSingle[1][0]
-            let logtime = moment(data.logtime).format();
-            let logtimeDisplay = logtime.split('T')[0] + " " + (logtime.split('T')[1]).split('+')[0];
-            let Object = {
-                logtime : logtimeDisplay,
-                inv1 : data.inv1,
-                inv2 : data.inv2,
-                inv3 : data.inv3,
-                timevalue : data.timevalue
-            }
-            res.send(Object);
-        } catch (error) {
-            errorhandler.error(error);
-            res.status(501).send({Error : error});
-        }
+
+    try {
+        let historyDataSingle = (device === "inv") ? await database.getInvDataSingle(recordStartDate, recordStopDate, currentInvMaxId) : {};
+        currentInvMaxId = (await database.getCurrentMaxIDforInv())[0].maxid;
+        res.send(historyDataSingle);
+    } catch (error) {
+        errorhandler.error(error);
+        res.status(501).send({Error : error});
     }
 })
 

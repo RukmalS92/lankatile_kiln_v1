@@ -6,6 +6,14 @@ const data = require('../modules/shared')
 const config = require('../../config/config.json')
 const e = require('express')
 
+// const ModbusRTU = require("modbus-serial");
+// // create an empty modbus client
+// const client = new ModbusRTU();
+// // open connection to a serial port
+// client.connectRTUBuffered("COM6", { baudRate: 9600, parity : 'none' });
+// // set timeout, if slave did not reply back
+// client.setTimeout(100);
+
 /* For testing purpose enabling only required components */
 let key = 0;
 if(config.controllertest === "temp"){
@@ -46,7 +54,8 @@ const keyFn = async (key) => {
                     finalinvdata.push(element[1]);
                 }))
                 await database.updateTemperatureData(finaltempdata)
-                await database.updateVFDSpeedData(finalinvdata, 0)
+                let timevalue = (await database.getTimeValue())[0].timevalue
+                await database.updateVFDSpeedData(finalinvdata, timevalue)
             } catch (error) {
                 errorhandler.error(error)
             }
@@ -76,7 +85,8 @@ const keyFn = async (key) => {
                 rawIn.forEach((element => {
                     finalinvdata.push(element[1]);
                 }))
-                await database.updateVFDSpeedData(finalinvdata, 0)
+                let timevalue = (await database.getTimeValue())[0].timevalue
+                await database.updateVFDSpeedData(finalinvdata, timevalue)
             } catch (error) {
                 errorhandler.error(error)
             }
@@ -88,6 +98,10 @@ const keyFn = async (key) => {
 }
 
 setInterval(async () => {
-    await keyFn(key)
+    try {
+        await keyFn(key)
+    } catch (error) {
+        
+    }
 }, cyclicIntervalTime)
 
