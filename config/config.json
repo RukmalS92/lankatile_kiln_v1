@@ -10,7 +10,7 @@
         "temeprature" : "COM6",
         "vfd" : "COM5"
     },
-    "timevalue_calibration" : 23.3,
+    "timevalue_calibration" : 1,
     "tempcontrollerid" : [
         1,
         2,

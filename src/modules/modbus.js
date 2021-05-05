@@ -17,8 +17,8 @@ const com_ports = config.com_ports
 //register numbers
 let temp_pv_address = 2;
 let temp_sv_address = 4;
-let vfd_pv_address = 9002;
-let vfd_sv_address = 9002;
+let vfd_pv_address = 8502;
+let vfd_sv_address = 8502;
 
 //comport flag
 let temp_comport_available_flag = false;

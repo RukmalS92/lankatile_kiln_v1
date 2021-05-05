@@ -29,6 +29,11 @@ const saveTempSV =  async (req,res,next) => {
 //middleware to save SV values : Inverter to database
 const saveInvSV = async (req,res,next) => {
     try {
+        const values = Object.values(req.body)
+        const lengthViolationElements = values.filter((value) => value >= 100)
+        if(lengthViolationElements > 0){
+            throw new Error("Exeeds Inverter control variable than 100")
+        }
         await database.setSVInvData(req.body)
         next();
     } catch (error) {
